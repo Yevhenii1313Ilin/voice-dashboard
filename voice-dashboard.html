@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AGI World Voice Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: sans-serif; background: #f9fafe; color: #111; padding: 2rem; max-width: 800px; margin: auto; }
+    .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-top: 1rem; }
+    h2 { color: #0047ab; }
+    select, audio { width: 100%; margin-top: 0.5rem; margin-bottom: 1rem; }
+    .label { font-weight: bold; margin-top: 1rem; }
+    .row { display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+  <h2>🌍 AGI World — Голос Землі</h2>
+  <label for="countrySelect">Выбери страну:</label>
+  <select id="countrySelect"></select>
+
+  <div class="card" id="voiceCard" style="display:none;">
+    <div class="row">
+      <div><span id="emoji"></span> <strong id="country"></strong></div>
+      <div id="date"></div>
+    </div>
+    <p class="label">🎭 Эмоции:</p>
+    <p><span id="emo1"></span>: <span id="score1"></span> | <span id="emo2"></span>: <span id="score2"></span></p>
+
+    <p class="label">🎧 Voice (EN):</p>
+    <audio controls id="audioEN"></audio>
+    <p id="textEN"></p>
+
+    <p class="label">🎧 Голос (UA):</p>
+    <audio controls id="audioUA"></audio>
+    <p id="textUA"></p>
+
+    <p class="label">🎼 Sound Style:</p>
+    <p id="soundStyle"></p>
+  </div>
+
+  <script>
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://ilcfgzjyphohwbfqpxzh.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsY2Znemp5cGhvaHdiZnFweHpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4NTA1MjUsImV4cCI6MjA2NTQyNjUyNX0.av8zRIkkLBBKm8f2qtn2KLGzZ94L6CBVC6pQrXTnT3Y';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    async function loadCountries() {
+      const { data, error } = await supabase.from('global_emo_logs').select('country, country_code').order('country');
+      const select = document.getElementById('countrySelect');
+      data.forEach(row => {
+        const option = document.createElement('option');
+        option.value = row.country_code;
+        option.textContent = row.country;
+        select.appendChild(option);
+      });
+    }
+
+    async function getVoiceLog(code) {
+      const { data } = await supabase
+        .from('global_emo_logs')
+        .select('*')
+        .eq('country_code', code)
+        .limit(1)
+        .single();
+
+      document.getElementById('voiceCard').style.display = 'block';
+      document.getElementById('country').textContent = data.country;
+      document.getElementById('emoji').textContent = data.emoji;
+      document.getElementById('date').textContent = data.date;
+      document.getElementById('emo1').textContent = data.emo_primary;
+      document.getElementById('score1').textContent = data.emo_score_primary;
+      document.getElementById('emo2').textContent = data.emo_secondary;
+      document.getElementById('score2').textContent = data.emo_score_secondary;
+      document.getElementById('audioEN').src = data.voice_url_en;
+      document.getElementById('textEN').textContent = data.voice_text_en;
+      document.getElementById('audioUA').src = data.voice_url_ua;
+      document.getElementById('textUA').textContent = data.voice_text_ua;
+      document.getElementById('soundStyle').textContent = data.sound_style;
+    }
+
+    document.getElementById('countrySelect').addEventListener('change', (e) => getVoiceLog(e.target.value));
+    loadCountries();
+  </script>
+</body>
+</html>
